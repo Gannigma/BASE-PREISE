@@ -100,7 +100,7 @@ def run_vorjahr_model(ticker, analysis_date, mode_choice, divider_val,
 
     cutoff_date = analysis_date - timedelta(days=1)
     df_cut = df_current.loc[:cutoff_date]
-    if df_cut.empty:
+    if df_cut is not None and not df_cut.empty.empty:
         raise ValueError("Keine Daten bis zum Vortag (Vorjahr-Modell).")
 
     # Extrem-Kerze
@@ -225,7 +225,7 @@ def run_vormonat_model(ticker, analysis_date, mode_choice, divider_val,
 
     cutoff = analysis_date - timedelta(days=1)
     df_cut = df_all.loc[:cutoff]
-    if df_cut.empty:
+    if df_cut is not None and not df_cut.empty.empty:
         raise ValueError("Keine Daten bis zum Vortag (Vormonat).")
 
     extreme_date, extreme_row = find_extreme_3days(df_cut, mode_choice)
