@@ -10,6 +10,16 @@ def load_data_daily(ticker, start_date, end_date):
     Wenn df leer ist => ValueError mit entsprechender Fehlermeldung.
     """
     df = yf.download(ticker, start=start_date, end=end_date, interval='1d', progress=False)
+
+    # Debug-Ausgabe
+    import streamlit as st
+    st.write("DEBUG - Rohdaten von yfinance (calc_360):")
+    st.dataframe(df.head(10))  # zeigt die ersten 10 Zeilen
+    st.dataframe(df.tail(10))  # zeigt die letzten 10 Zeilen
+
+if df.empty:
+    raise ValueError("Keine Daten...")
+
     if df.empty:
         raise ValueError(f"Falsches Wertpapierkürzel oder keine Daten gefunden (360). [{ticker}]")
     df.reset_index(inplace=True)
