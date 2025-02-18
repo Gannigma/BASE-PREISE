@@ -1,9 +1,8 @@
-# Verhindert distutils-Probleme:
 setuptools>=68.0
 wheel>=0.41.2
+standalone-distutils==0.1.7  # damit distutils verfügbar ist
 
-# Neuere Versionen, die ohne distutils auskommen:
-numpy==1.25.2
+numpy==1.26.0rc3
 pandas==2.1.1
 
 streamlit==1.25.0
