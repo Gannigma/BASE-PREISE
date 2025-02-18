@@ -15,7 +15,7 @@ def load_data_daily(ticker, start_date, end_date):
     
     # DEBUG-Block: Zeige die ersten/letzten Zeilen direkt in der UI
     st.write(f"**DEBUG** - Downloaded raw data for {ticker} from {start_date} to {end_date}")
-    st.dataframe(df.head(5))  # Zeigt ersten 5 Zeilen
+    st.dataframe(df.head(5))  # Zeigt erste 5 Zeilen
     st.dataframe(df.tail(5))  # Zeigt letzte 5 Zeilen
     st.write("Shape of df:", df.shape)
 
@@ -86,7 +86,7 @@ def run_360_model(ticker, analysis_date, mode_choice,
     st.dataframe(df_cut.tail(5))
 
     # Falls leer => Kein Handelstag / Keine Daten
-    if df_cut is None or df_cut.empty:
+    if df_cut.empty:
         raise ValueError("Keine Daten bis zum Vortag (360).")
 
     # 2) Extrem-Kerze & ATR
