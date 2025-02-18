@@ -3,25 +3,26 @@ import math
 from datetime import timedelta
 import pandas as pd
 import plotly.graph_objects as go
+import streamlit as st
 
 def load_data_daily(ticker, start_date, end_date):
     """
     Holt die Kursdaten via yfinance.
     Wenn df leer ist => ValueError mit entsprechender Fehlermeldung.
+    Zusätzlich Debug-Ausgaben, um zu sehen, was von yfinance kommt.
     """
     df = yf.download(ticker, start=start_date, end=end_date, interval='1d', progress=False)
-
-    # Debug-Ausgabe
-    import streamlit as st
-    st.write("DEBUG - Rohdaten von yfinance (calc_360):")
-    st.dataframe(df.head(10))  # zeigt die ersten 10 Zeilen
-    st.dataframe(df.tail(10))  # zeigt die letzten 10 Zeilen
-
-if df.empty:
-    raise ValueError("Keine Daten...")
+    
+    # DEBUG-Block: Zeige die ersten/letzten Zeilen direkt in der UI
+    st.write(f"**DEBUG** - Downloaded raw data for {ticker} from {start_date} to {end_date}")
+    st.dataframe(df.head(5))  # Zeigt ersten 5 Zeilen
+    st.dataframe(df.tail(5))  # Zeigt letzte 5 Zeilen
+    st.write("Shape of df:", df.shape)
 
     if df.empty:
-        raise ValueError(f"Falsches Wertpapierkürzel oder keine Daten gefunden (360). [{ticker}]")
+        raise ValueError(f"Falsches Wertpapierkürzel oder keine Daten (360). [{ticker}]")
+    
+    # Indizes anpassen
     df.reset_index(inplace=True)
     df['Date'] = pd.to_datetime(df['Date'])
     df.set_index('Date', inplace=True)
@@ -50,7 +51,7 @@ def calculate_atr(df, period=14):
     df = df.copy()
     df['H-L'] = df['High'] - df['Low']
     df['H-PC'] = (df['High'] - df['Close'].shift(1)).abs()
-    df['L-PC'] = (df['Low'] - df['Close'].shift(1)).abs()
+    df['L-PC'] = (df['Low']  - df['Close'].shift(1)).abs()
     df['TR']   = df[['H-L', 'H-PC', 'L-PC']].max(axis=1)
     df['ATR']  = df['TR'].rolling(window=period).mean()
     return df
@@ -67,19 +68,28 @@ def run_360_model(ticker, analysis_date, mode_choice,
       4) Expansions = 4 Werte oberhalb von ub (bei "hoch") oder unterhalb von lb (bei "tief")
          - wir nehmen die "nächsten" 4 in aufsteigender Reihenfolge und sortieren sie am Ende absteigend.
     """
+
     # 1) Daten laden
     total_days = data_buffer + atr_period + 5
     end_date = analysis_date
     start_date = end_date - timedelta(days=total_days)
 
-    # Yahoo-Download
     df = load_data_daily(ticker, start_date, end_date)
+
+    # real_cutoff = analysis_date - 1 Tag
     real_cutoff = analysis_date - timedelta(days=1)
+    # Filter: alles bis inklusive real_cutoff
     df_cut = df.loc[:real_cutoff].copy()
-    if df_cut is not None and not df_cut.empty:
+
+    # DEBUG: Zeige an, was df_cut hat
+    st.write(f"**DEBUG** - df_cut bis {real_cutoff}, Shape: {df_cut.shape}")
+    st.dataframe(df_cut.tail(5))
+
+    # Falls leer => Kein Handelstag / Keine Daten
+    if df_cut is None or df_cut.empty:
         raise ValueError("Keine Daten bis zum Vortag (360).")
 
-    # 2) Bestimme Extrem-Kerze & ATR
+    # 2) Extrem-Kerze & ATR
     extreme_date, extreme_row = find_extreme_day(df_cut, mode_choice)
     if extreme_date is None or extreme_row is None:
         raise ValueError("Keine Extrem-Kerze (3 Handelstage) (360).")
@@ -109,38 +119,31 @@ def run_360_model(ticker, analysis_date, mode_choice,
     lb = round(lb, 4)
     ub = round(ub, 4)
 
-    # 4) Erzeuge die 360°-Schritte ab 0 => steps
-    #    Bis z.B. 100000 (anpassbar, aber sollte genügen für Öl, BTC, etc.)
-    #    Du kannst bei sehr hohen Kursen (z.B. 3600) auch auf 999999 erhöhen
+    # 4) 360°-Schritte (von 0 aufwärts)
     steps = []
     val = 0.0
     max_val = 500000.0
     while val <= max_val:
         steps.append(round(val, 4))
-        val += selected_small_div  # z.B. 22.5, 45, etc.
+        val += selected_small_div
 
-    # 5) In-Range = [x for x in steps if lb <= x <= ub], absteigend
-    in_range_vals = [x for x in steps if x >= lb and x <= ub]
+    # In-Range
+    in_range_vals = [x for x in steps if lb <= x <= ub]
     in_range_vals.sort(reverse=True)
 
-    # 6) Expansions: je nach Modus 4 Werte ober- bzw. unterhalb
+    # 5) Expansions je nach Modus
     expansions_vals = []
     if mode_choice == "hoch":
-        # next 4 Schritte oberhalb ub (kleinste > ub, dann next, next...) => absteigend sortieren
         bigger_candidates = [x for x in steps if x > ub]
         bigger_candidates.sort()  # aufsteigend
-        # nimm die ersten 4
         expansions_vals = bigger_candidates[:4]
         expansions_vals.sort(reverse=True)
     else:
-        # "tief" => 4 Werte unter lb
         smaller_candidates = [x for x in steps if x < lb]
-        # sortiert absteigend => wir nehmen die ersten 4
         smaller_candidates.sort(reverse=True)
         expansions_vals = smaller_candidates[:4]
-        # expansions_vals sind jetzt 4 absteigend => passt
 
-    # 7) Chart (letzte 10 Kerzen)
+    # 6) Letzte 10 Kerzen im Chart
     df_chart = df_cut.tail(10)
 
     # Rückgabe
