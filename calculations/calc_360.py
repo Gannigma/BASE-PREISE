@@ -66,8 +66,7 @@ def run_360_model(ticker, analysis_date, mode_choice,
     df = load_data_daily(ticker, start_date, end_date)
     real_cutoff = analysis_date - timedelta(days=1)
     df_cut = df.loc[:real_cutoff].copy()
-    if df_cut is not None and not df_cut.empty
-.empty:
+    if df_cut is not None and not df_cut.empty:
         raise ValueError("Keine Daten bis zum Vortag (360).")
 
     # 2) Bestimme Extrem-Kerze & ATR
