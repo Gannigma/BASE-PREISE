@@ -14,6 +14,7 @@ def main():
     
     # 1) Eingaben aus der Sidebar holen
     inputs = get_sidebar_inputs()
+    st.write("DEBUG in app.py - start_button =", inputs["start_button"])
     
     # 2) Warten, bis der Benutzer auf "Berechnen" klickt
     if not inputs["start_button"]:
