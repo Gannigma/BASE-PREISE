@@ -1,3 +1,6 @@
+import uuid
+
+run_id = uuid.uuid4()  # Eindeutige ID für diesen Run
 import streamlit as st
 from datetime import timedelta
 
@@ -14,7 +17,7 @@ def main():
     
     # 1) Eingaben aus der Sidebar holen
     inputs = get_sidebar_inputs()
-    st.write("DEBUG in app.py - start_button =", inputs["start_button"])
+    st.write("DEBUG in app.py - start_button =", inputs["start_button"], "Run-ID:", run_id)
     
     # 2) Warten, bis der Benutzer auf "Berechnen" klickt
     if not inputs["start_button"]:
