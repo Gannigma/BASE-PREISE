@@ -12,15 +12,15 @@ from calculations.calc_vormonat_vorjahr_fix import run_vorjahr_model, run_vormon
 def main():
     st.title("Gannigma App für Base: Preise")
     
-    # Eingaben aus der Sidebar holen
+    # 1) Eingaben aus der Sidebar holen
     inputs = get_sidebar_inputs()
     
-    # Warten, bis der Benutzer auf "Berechnen" klickt
+    # 2) Warten, bis der Benutzer auf "Berechnen" klickt
     if not inputs["start_button"]:
         st.info("Bitte alle Eingaben in der Sidebar vornehmen und auf 'Berechnen' klicken.")
         return
 
-    # Werte aus den Sidebar-Eingaben extrahieren
+    # 3) Werte aus den Sidebar-Eingaben extrahieren
     ticker = inputs["ticker"]
     analysis_date = inputs["analysis_date"]
     mode_choice = inputs["mode_choice"]
@@ -33,8 +33,9 @@ def main():
 
     data_buffer = 2000  # ca. 5 Jahre
 
+    # 4) Versuche die Modelle auszuführen
     try:
-        # 1) 360°-Modell
+        # 360°-Modell
         result_360 = run_360_model(
             ticker=ticker,
             analysis_date=analysis_date,
@@ -46,7 +47,7 @@ def main():
             data_buffer=data_buffer
         )
 
-        # 2) Vorjahr
+        # Vorjahr
         result_vorjahr = run_vorjahr_model(
             ticker=ticker,
             analysis_date=analysis_date,
@@ -57,7 +58,7 @@ def main():
             databuf=data_buffer
         )
 
-        # 3) Vormonat
+        # Vormonat
         result_vormonat = run_vormonat_model(
             ticker=ticker,
             analysis_date=analysis_date,
@@ -67,15 +68,15 @@ def main():
             atr_period=atr_period,
             databuf=data_buffer
         )
+
     except ValueError as ve:
-        # Falsches Kürzel oder keine Daten
         st.error(str(ve))
         return
     except Exception as e:
         st.error(f"Fehler bei der Berechnung: {e}")
         return
 
-    # Basisdaten für die Anzeige (z.B. aus 360°-Ergebnis)
+    # 5) Basisdaten für die Anzeige (z.B. aus 360°-Ergebnis)
     basisdaten = {
         "analysis_date": analysis_date,
         "vortageskerze": result_360.get("extreme_date", "n/a"),
@@ -85,27 +86,25 @@ def main():
         "mode_choice": mode_choice
     }
 
-    # In-Range & Expansionswerte (360°)
+    # 6) In-Range & Expansionswerte
+    #  - 360°
     inrange_360 = result_360.get("in_range_vals", [])
     expansions_360 = result_360.get("expansions_vals", [])
-
-    # In-Range & Expansionswerte (Vorjahr)
+    #  - Vorjahr
     inrange_vorjahr = result_vorjahr.get("preise_inrange_vorjahr", [])
     expansions_vorjahr = result_vorjahr.get("preise_ausserhalb_vorjahr", [])
-
-    # In-Range & Expansionswerte (Vormonat)
+    #  - Vormonat
     inrange_vormonat = result_vormonat.get("preise_inrange_vormonat", [])
     expansions_vormonat = result_vormonat.get("preise_ausserhalb_vormonat", [])
 
-    # Chart-Daten: z.B. aus 360°-Result
+    # 7) Chart-Daten: z.B. aus 360°-Result
     df_chart = result_360.get("df_chart", None)
-    # Falls df_chart existiert, prüfen wir, ob es leer ist:
     if df_chart is not None and not df_chart.empty:
         df_chart = df_chart.tail(10)
     else:
         df_chart = None
 
-    # Gesamtergebnisse für ui_display
+    # 8) Zusammenfassung der Ergebnisse (ergebnisse-Dict)
     ergebnisse = {
         # 360°
         "preise_inrange_360": inrange_360,
@@ -124,7 +123,6 @@ def main():
         "vj_range": None,
         "vj_teiler": result_vorjahr.get("divider_val"),
         "vj_schritt": result_vorjahr.get("step_val"),
-
         "vm_high": result_vormonat.get("m_high"),
         "vm_low": result_vormonat.get("m_low"),
         "vm_range": None,
@@ -132,14 +130,14 @@ def main():
         "vm_schritt": result_vormonat.get("step_val")
     }
 
-    # Range-Berechnungen
-    if ergebnisse["vj_high"] and ergebnisse["vj_low"]:
+    # 9) Range-Berechnungen (Vorjahr & Vormonat)
+    if ergebnisse["vj_high"] is not None and ergebnisse["vj_low"] is not None:
         ergebnisse["vj_range"] = ergebnisse["vj_high"] - ergebnisse["vj_low"]
-    if ergebnisse["vm_high"] and ergebnisse["vm_low"]:
+    if ergebnisse["vm_high"] is not None and ergebnisse["vm_low"] is not None:
         ergebnisse["vm_range"] = ergebnisse["vm_high"] - ergebnisse["vm_low"]
 
+    # 10) Abschließende Darstellung
     display_results(ticker, basisdaten, ergebnisse, volatility, big_rhythm, small_div)
-
 
 if __name__ == '__main__':
     main()
