@@ -3,13 +3,12 @@ import math
 from datetime import date, timedelta
 import pandas as pd
 import plotly.graph_objects as go
-import streamlit as st
 
 def calculate_atr(df, period=14):
     df = df.copy()
     df['H-L'] = df['High'] - df['Low']
     df['H-PC'] = abs(df['High'] - df['Close'].shift(1))
-    df['L-PC'] = abs(df['Low']  - df['Close'].shift(1))
+    df['L-PC'] = abs(df['Low'] - df['Close'].shift(1))
     df['TR'] = df[['H-L', 'H-PC', 'L-PC']].max(axis=1)
     df['ATR'] = df['TR'].rolling(window=period).mean()
     return df
@@ -46,15 +45,8 @@ def load_data_year(ticker, year):
     start_date = f"{year}-01-01"
     end_date   = f"{year}-12-31"
     df = yf.download(ticker, start=start_date, end=end_date, interval='1d', progress=False)
-    
-    # DEBUG
-    st.write(f"**DEBUG** - load_data_year: {ticker}, {year}")
-    st.dataframe(df.head(5))
-    st.dataframe(df.tail(5))
-    st.write("Shape:", df.shape)
-
     if df.empty:
-        raise ValueError(f"Keine Daten für das Vorjahr {year} (oder falsches Kürzel?).")
+        raise ValueError(f"Keine Daten für das Vorjahr {year}. [{ticker}]")
     df.reset_index(inplace=True)
     df['Date'] = pd.to_datetime(df['Date'])
     df.set_index('Date', inplace=True)
@@ -79,13 +71,6 @@ def run_vorjahr_model(ticker, analysis_date, mode_choice, divider_val,
     end_date = analysis_date
     start_date = end_date - timedelta(days=total_days)
     df_current = yf.download(ticker, start=start_date, end=end_date, interval='1d', progress=False)
-    
-    # DEBUG
-    st.write("**DEBUG Vorjahr** - df_current:")
-    st.dataframe(df_current.head(5))
-    st.dataframe(df_current.tail(5))
-    st.write("Shape:", df_current.shape)
-
     if df_current.empty:
         raise ValueError("Keine aktuellen Daten (Vorjahr-Modell).")
 
@@ -125,13 +110,11 @@ def run_vorjahr_model(ticker, analysis_date, mode_choice, divider_val,
 
     expansions = []
     if mode_choice == "hoch":
-        # nur 4 Werte oberhalb
         ex_up = [x for x in sequence if x > ub]
         ex_up.sort()
         expansions = ex_up[:4]
         expansions.sort(reverse=True)
     else:
-        # nur 4 Werte unterhalb
         ex_down = [x for x in sequence if x < lb]
         ex_down.sort(reverse=True)
         expansions = ex_down[:4]
@@ -159,11 +142,6 @@ def run_vorjahr_model(ticker, analysis_date, mode_choice, divider_val,
 
 def load_data_range(ticker, start_date, end_date):
     df = yf.download(ticker, start=start_date, end=end_date, interval='1d', progress=False)
-    st.write("**DEBUG** - load_data_range:")
-    st.dataframe(df.head(5))
-    st.dataframe(df.tail(5))
-    st.write("Shape:", df.shape)
-
     if df.empty:
         raise ValueError("Falsches Wertpapierkürzel oder keine Daten (Vormonat).")
     df.reset_index(inplace=True)
