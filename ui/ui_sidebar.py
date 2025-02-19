@@ -86,8 +86,9 @@ def get_sidebar_inputs():
     # 9) Berechnen-Button
     start_button = st.sidebar.button(
         "Berechnen",
-        help="Bitte zuerst alle Eingaben abschließen, dann klicken."
-    )
+        help="Bitte zuerst alle Eingaben abschließen, dann klicken.")
+    st.sidebar.write("DEBUG - start_button =", start_button)
+
     
     # 10) Dictionary mit allen Eingaben zurückgeben
     return {
