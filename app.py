@@ -21,8 +21,8 @@ def main():
     
     # 2) Warten, bis der Benutzer auf "Berechnen" klickt
     if not inputs["start_button"]:
-    st.info("Bitte alle Eingaben in der Sidebar vornehmen und auf 'Berechnen' klicken.")
-    st.stop()  # statt return
+        st.info("Bitte alle Eingaben in der Sidebar vornehmen und auf 'Berechnen' klicken.")
+        st.stop()  # statt return
 
     # 3) Werte aus den Sidebar-Eingaben extrahieren
     ticker = inputs["ticker"]
