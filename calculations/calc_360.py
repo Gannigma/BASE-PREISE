@@ -52,10 +52,10 @@ def run_360_model(ticker, analysis_date, mode_choice,
                   selected_small_div, atr_period, data_buffer):
     """
     Implementiert das "360°"-Preismodell nach deinem Prompt:
-      1) ATR-Range [lb, ub] über Extrem-Kerze (letzte 3 Tage) + Volatilitätsfaktor
-      2) 360°-Liste ab 0 in Steps von 'selected_small_div'
-      3) In-Range = Werte in [lb, ub]
-      4) 4 Expansions je nach Modus "hoch" oder "tief"
+      1) ATR-Range [lb, ub] über Extrem-Kerze (letzte 3 Tage) + Volatilitätsfaktor.
+      2) 360°-Liste ab 0 in Steps von 'selected_small_div' bis max_val.
+      3) In-Range = alle Werte in [lb, ub].
+      4) Expansions: 4 Werte oberhalb (bei hoch) oder unterhalb (bei tief) der Range.
     """
 
     # 1) Daten laden
@@ -70,8 +70,6 @@ def run_360_model(ticker, analysis_date, mode_choice,
 
     # Filter: alles bis inklusive real_cutoff
     df_cut = df.loc[:real_cutoff].copy()
-
-    # Falls leer => Kein passender Handelstag
     if df_cut.empty:
         raise ValueError("Keine Daten bis zum Vortag (360).")
 
@@ -105,7 +103,7 @@ def run_360_model(ticker, analysis_date, mode_choice,
     lb = round(lb, 4)
     ub = round(ub, 4)
 
-    # 4) 360°-Schritte von 0 bis max_val
+    # 4) 360°-Schritte (von 0 bis max_val)
     steps = []
     val = 0.0
     max_val = 500000.0
