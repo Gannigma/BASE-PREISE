@@ -7,13 +7,13 @@ import plotly.graph_objects as go
 def load_data_daily(ticker, start_date, end_date):
     """
     Holt die Kursdaten via yfinance.
-    Bricht ab, wenn kein Datensatz geliefert wird (DataFrame leer).
+    Falls das heruntergeladene DataFrame leer ist,
+    werfen wir einen ValueError.
     """
     df = yf.download(ticker, start=start_date, end=end_date, interval='1d', progress=False)
     if df.empty:
-        raise ValueError(f"Falsches Wertpapierkürzel oder keine Daten (360). [{ticker}]")
-
-    # Indizes anpassen
+        raise ValueError(f"Falsches Wertpapierkürzel oder keine Daten (360) für {ticker}!")
+    # Index anpassen
     df.reset_index(inplace=True)
     df['Date'] = pd.to_datetime(df['Date'])
     df.set_index('Date', inplace=True)
@@ -27,6 +27,7 @@ def find_extreme_day(df, mode):
     """
     if len(df) < 3:
         return None, None
+    # tail(3) => die letzten 3 Zeilen
     cands = df.tail(3)
     if mode == "hoch":
         idx = cands['High'].idxmax()
@@ -52,12 +53,11 @@ def run_360_model(ticker, analysis_date, mode_choice,
                   selected_small_div, atr_period, data_buffer):
     """
     Implementiert das "360°"-Preismodell nach deinem Prompt:
-      1) ATR-Range [lb, ub] über Extrem-Kerze (letzte 3 Tage) + Volatilitätsfaktor.
-      2) 360°-Liste ab 0 in Steps von 'selected_small_div' bis max_val.
-      3) In-Range = alle Werte in [lb, ub].
-      4) Expansions: 4 Werte oberhalb (bei hoch) oder unterhalb (bei tief) der Range.
+      1) ATR-Range [lb, ub] über Extrem-Kerze (letzte 3 Tage) + Volatilitätsfaktor
+      2) 360°-Liste ab 0 in Schritten von 'selected_small_div' bis max_val
+      3) In-Range = alle Werte in [lb, ub], absteigend sortiert
+      4) 4 Expansions oberhalb (hoch) oder unterhalb (tief) der Range
     """
-
     # 1) Daten laden
     total_days = data_buffer + atr_period + 5
     end_date = analysis_date
@@ -70,7 +70,9 @@ def run_360_model(ticker, analysis_date, mode_choice,
 
     # Filter: alles bis inklusive real_cutoff
     df_cut = df.loc[:real_cutoff].copy()
-    if df_cut is not None and not df_cut.empty.empty:
+
+    # Falls df_cut leer => Kein passender Handelstag
+    if df_cut.empty:
         raise ValueError("Keine Daten bis zum Vortag (360).")
 
     # 2) Extrem-Kerze & ATR
@@ -83,15 +85,17 @@ def run_360_model(ticker, analysis_date, mode_choice,
     if math.isnan(curr_atr):
         raise ValueError("Nicht genug Daten für ATR (360).")
 
-    # Vol-Faktor
+    # Volatilitätsfaktor
     if volatility_choice == "hoch":
         vol_factor = 1.5
-    elif volatility_choice == "gering":
-        vol_factor = 0.5
+    elif volatility_choice == "normal":
+        vol_factor = 1.0
     else:
+        # Falls du doch mal "gering" unterstützt, setze hier 0.5
+        # oder wie du es definieren möchtest.
         vol_factor = 1.0
 
-    # 3) Range-Berechnung
+    # 3) Range [lb, ub] berechnen
     basis = (extreme_row['High'] + extreme_row['Low']) / 2
     if mode_choice == "hoch":
         lb = basis
@@ -111,26 +115,25 @@ def run_360_model(ticker, analysis_date, mode_choice,
         steps.append(round(val, 4))
         val += selected_small_div
 
-    # In-Range
+    # In-Range = [lb, ub]
     in_range_vals = [x for x in steps if lb <= x <= ub]
     in_range_vals.sort(reverse=True)
 
-    # Expansions
+    # Expansions: 4 Werte ober- oder unterhalb
     expansions_vals = []
     if mode_choice == "hoch":
         bigger_candidates = [x for x in steps if x > ub]
         bigger_candidates.sort()  # aufsteigend
         expansions_vals = bigger_candidates[:4]
         expansions_vals.sort(reverse=True)
-    else:  # "tief"
+    else:
         smaller_candidates = [x for x in steps if x < lb]
         smaller_candidates.sort(reverse=True)
         expansions_vals = smaller_candidates[:4]
 
-    # Letzte 10 Kerzen im Chart
+    # 5) Letzte 10 Kerzen im Chart
     df_chart = df_cut.tail(10)
 
-    # Ergebnisse
     results = {
         "df_cut": df_cut,
         "df_chart": df_chart,
