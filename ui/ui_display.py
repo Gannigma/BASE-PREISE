@@ -107,12 +107,14 @@ def display_results(ticker, basisdaten, ergebnisse, volatility, big_rhythm, smal
                           annotation_text="Range-Obergrenze")
 
         # 360°-Linien
+        inrange_360 = ergebnisse.get("preise_inrange_360", [])
+        inrange_vorjahr = ergebnisse.get("preise_inrange_vorjahr", [])
+        inrange_vormonat = ergebnisse.get("preise_inrange_vormonat", [])
+
         for preis in inrange_360:
             fig.add_hline(y=preis, line=dict(color="green"), annotation_text="360°")
-        # Vorjahr
         for preis in inrange_vorjahr:
             fig.add_hline(y=preis, line=dict(color="red"), annotation_text="Vorjahr")
-        # Vormonat
         for preis in inrange_vormonat:
             fig.add_hline(y=preis, line=dict(color="blue"), annotation_text="Vormonat")
 
