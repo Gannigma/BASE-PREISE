@@ -20,11 +20,8 @@ def format_price(value: float) -> str:
     else:
         decimals = 0
 
-    # US-Format, z.B. "12,345.67"
     pattern = f"{{:,.{decimals}f}}"
     temp_str = pattern.format(value)
-
-    # Ersetzen: ',' => 'X', '.' => ',', 'X' => '.'
     temp_str = temp_str.replace(",", "X").replace(".", ",").replace("X", ".")
     return temp_str
 
@@ -125,7 +122,7 @@ def display_results(ticker, basisdaten, ergebnisse, volatility, big_rhythm, smal
         )
         st.plotly_chart(fig, use_container_width=True)
     else:
-        st.info("Keine Chart-Daten vorhanden oder Datenframe ist leer.")
+        st.info("Keine Chart-Daten vorhanden oder DataFrame leer.")
 
     st.markdown("---")
 
@@ -199,7 +196,6 @@ def display_results(ticker, basisdaten, ergebnisse, volatility, big_rhythm, smal
     vm_teiler = ergebnisse.get("vm_teiler")
     vm_schritt = ergebnisse.get("vm_schritt")
 
-    # Jetzt erst Spalte VM, dann VJ
     col_vm, col_vj = st.columns(2)
 
     with col_vm:
