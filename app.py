@@ -75,7 +75,7 @@ def main():
         st.error(f"Fehler bei der Berechnung: {e}")
         return
 
-    # Basisdaten (z.B. aus 360°-Ergebnis)
+    # Basisdaten für die Anzeige (z.B. aus 360°-Ergebnis)
     basisdaten = {
         "analysis_date": analysis_date,
         "vortageskerze": result_360.get("extreme_date", "n/a"),
@@ -99,31 +99,15 @@ def main():
 
     # Chart-Daten: z.B. aus 360°-Result
     df_chart = result_360.get("df_chart", None)
-    if df_chart is not None:
+    # Falls df_chart existiert, prüfen wir, ob es leer ist:
+    if df_chart is not None and not df_chart.empty:
         df_chart = df_chart.tail(10)
-
-    # Daten für Block 6 (Datencheck) – aus result_vorjahr / result_vormonat
-    # Vorjahr
-    vj_high = result_vorjahr.get("vj_high")
-    vj_low  = result_vorjahr.get("vj_low")
-    vj_range = None
-    if vj_high is not None and vj_low is not None:
-        vj_range = vj_high - vj_low
-    vj_teiler = result_vorjahr.get("divider_val")
-    vj_schritt = result_vorjahr.get("step_val")
-
-    # Vormonat
-    vm_high = result_vormonat.get("m_high")
-    vm_low  = result_vormonat.get("m_low")
-    vm_range = None
-    if vm_high is not None and vm_low is not None:
-        vm_range = vm_high - vm_low
-    vm_teiler = result_vormonat.get("divider_val")
-    vm_schritt = result_vormonat.get("step_val")  # Falls du step_val so nennst
+    else:
+        df_chart = None
 
     # Gesamtergebnisse für ui_display
     ergebnisse = {
-        # 360° 
+        # 360°
         "preise_inrange_360": inrange_360,
         "preise_ausserhalb_360": expansions_360,
         # Vorjahr
@@ -135,19 +119,27 @@ def main():
         # Chart
         "df_chart": df_chart,
         # Datencheck
-        "vj_high": vj_high,
-        "vj_low": vj_low,
-        "vj_range": vj_range,
-        "vj_teiler": vj_teiler,
-        "vj_schritt": vj_schritt,
-        "vm_high": vm_high,
-        "vm_low": vm_low,
-        "vm_range": vm_range,
-        "vm_teiler": vm_teiler,
-        "vm_schritt": vm_schritt
+        "vj_high": result_vorjahr.get("vj_high"),
+        "vj_low": result_vorjahr.get("vj_low"),
+        "vj_range": None,
+        "vj_teiler": result_vorjahr.get("divider_val"),
+        "vj_schritt": result_vorjahr.get("step_val"),
+
+        "vm_high": result_vormonat.get("m_high"),
+        "vm_low": result_vormonat.get("m_low"),
+        "vm_range": None,
+        "vm_teiler": result_vormonat.get("divider_val"),
+        "vm_schritt": result_vormonat.get("step_val")
     }
 
+    # Range-Berechnungen
+    if ergebnisse["vj_high"] and ergebnisse["vj_low"]:
+        ergebnisse["vj_range"] = ergebnisse["vj_high"] - ergebnisse["vj_low"]
+    if ergebnisse["vm_high"] and ergebnisse["vm_low"]:
+        ergebnisse["vm_range"] = ergebnisse["vm_high"] - ergebnisse["vm_low"]
+
     display_results(ticker, basisdaten, ergebnisse, volatility, big_rhythm, small_div)
+
 
 if __name__ == '__main__':
     main()
