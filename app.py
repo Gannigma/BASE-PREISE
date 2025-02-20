@@ -1,7 +1,5 @@
-import uuid
-
-run_id = uuid.uuid4()  # Eindeutige ID für diesen Run
 import streamlit as st
+import uuid
 from datetime import timedelta
 
 # Import der UI-Module
@@ -13,17 +11,21 @@ from calculations.calc_360 import run_360_model
 from calculations.calc_vormonat_vorjahr_fix import run_vorjahr_model, run_vormonat_model
 
 def main():
+    # Eindeutige Run-ID zur Debug-Ausgabe
+    run_id = uuid.uuid4()
+
+    # Titel
     st.title("Gannigma App für Base: Preise")
-    
+
     # 1) Eingaben aus der Sidebar holen
     inputs = get_sidebar_inputs()
     st.write("DEBUG in app.py - start_button =", inputs["start_button"], "Run-ID:", run_id)
-    
+
     # 2) Warten, bis der Benutzer auf "Berechnen" klickt
     if not inputs["start_button"]:
         st.info("Bitte alle Eingaben in der Sidebar vornehmen und auf 'Berechnen' klicken.")
-        st.stop()  # statt return
-
+        st.stop()  # Verhindert Weiterausführung
+    
     # 3) Werte aus den Sidebar-Eingaben extrahieren
     ticker = inputs["ticker"]
     analysis_date = inputs["analysis_date"]
@@ -39,7 +41,7 @@ def main():
 
     # 4) Versuche die Modelle auszuführen
     try:
-        # 360°-Modell
+        # 4.1) 360°-Modell
         result_360 = run_360_model(
             ticker=ticker,
             analysis_date=analysis_date,
@@ -51,7 +53,7 @@ def main():
             data_buffer=data_buffer
         )
 
-        # Vorjahr
+        # 4.2) Vorjahr
         result_vorjahr = run_vorjahr_model(
             ticker=ticker,
             analysis_date=analysis_date,
@@ -62,7 +64,7 @@ def main():
             databuf=data_buffer
         )
 
-        # Vormonat
+        # 4.3) Vormonat
         result_vormonat = run_vormonat_model(
             ticker=ticker,
             analysis_date=analysis_date,
@@ -74,9 +76,11 @@ def main():
         )
 
     except ValueError as ve:
+        # Falls falsches Kürzel / keine Daten
         st.error(str(ve))
         return
     except Exception as e:
+        # Allgemeiner Fehler
         st.error(f"Fehler bei der Berechnung: {e}")
         return
 
@@ -101,7 +105,7 @@ def main():
     inrange_vormonat = result_vormonat.get("preise_inrange_vormonat", [])
     expansions_vormonat = result_vormonat.get("preise_ausserhalb_vormonat", [])
 
-    # 7) Chart-Daten: z.B. aus 360°-Result
+    # 7) Chart-Daten (z.B. aus dem 360°-Ergebnis)
     df_chart = result_360.get("df_chart", None)
     if df_chart is not None and not df_chart.empty:
         df_chart = df_chart.tail(10)
@@ -141,7 +145,15 @@ def main():
         ergebnisse["vm_range"] = ergebnisse["vm_high"] - ergebnisse["vm_low"]
 
     # 10) Abschließende Darstellung
-    display_results(ticker, basisdaten, ergebnisse, volatility, big_rhythm, small_div)
+    display_results(
+        ticker, 
+        basisdaten, 
+        ergebnisse, 
+        volatility, 
+        big_rhythm, 
+        small_div
+    )
+
 
 if __name__ == '__main__':
     main()
