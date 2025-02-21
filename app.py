@@ -1,3 +1,5 @@
+# app.py
+
 import streamlit as st
 import uuid
 from datetime import timedelta
@@ -19,13 +21,26 @@ def main():
 
     # 1) Eingaben aus der Sidebar holen
     inputs = get_sidebar_inputs()
-    st.write("DEBUG in app.py - start_button =", inputs["start_button"], "Run-ID:", run_id)
 
-    # 2) Warten, bis der Benutzer auf "Berechnen" klickt
+    # --- NEUE DEBUG-AUSGABE IM TERMINAL ---
+    print("\n[DEBUG] ----- NEW RUN STARTED -----")
+    print(f"[DEBUG] Run-ID: {run_id}")
+    print(f"[DEBUG] Inputs returned by sidebar: {inputs}")
+    print(f"[DEBUG] Current st.session_state: {dict(st.session_state)}")
+
+    # Zur Verdeutlichung schreiben wir die Inputs nochmals in die Streamlit-Oberfläche
+    st.write(f"DEBUG in app.py - start_button = {inputs['start_button']} | Run-ID = {run_id}")
+
+    # 2) Warten, bis der Benutzer auf 'Berechnen' klickt
     if not inputs["start_button"]:
+        # --- NEUE DEBUG-AUSGABE IM TERMINAL ---
+        print("[DEBUG] start_button is FALSE => st.stop()")
         st.info("Bitte alle Eingaben in der Sidebar vornehmen und auf 'Berechnen' klicken.")
         st.stop()  # Verhindert Weiterausführung
-    
+
+    # --- NEUE DEBUG-AUSGABE IM TERMINAL ---
+    print("[DEBUG] start_button is TRUE => Continue with calculations...")
+
     # 3) Werte aus den Sidebar-Eingaben extrahieren
     ticker = inputs["ticker"]
     analysis_date = inputs["analysis_date"]
@@ -41,7 +56,8 @@ def main():
 
     # 4) Versuche die Modelle auszuführen
     try:
-        # 4.1) 360°-Modell
+        # --- NEUE DEBUG-AUSGABE IM TERMINAL ---
+        print("[DEBUG] Calling run_360_model...")
         result_360 = run_360_model(
             ticker=ticker,
             analysis_date=analysis_date,
@@ -52,8 +68,9 @@ def main():
             atr_period=atr_period,
             data_buffer=data_buffer
         )
+        print("[DEBUG] run_360_model finished successfully.")
 
-        # 4.2) Vorjahr
+        print("[DEBUG] Calling run_vorjahr_model...")
         result_vorjahr = run_vorjahr_model(
             ticker=ticker,
             analysis_date=analysis_date,
@@ -63,8 +80,9 @@ def main():
             atr_period=atr_period,
             databuf=data_buffer
         )
+        print("[DEBUG] run_vorjahr_model finished successfully.")
 
-        # 4.3) Vormonat
+        print("[DEBUG] Calling run_vormonat_model...")
         result_vormonat = run_vormonat_model(
             ticker=ticker,
             analysis_date=analysis_date,
@@ -74,14 +92,21 @@ def main():
             atr_period=atr_period,
             databuf=data_buffer
         )
+        print("[DEBUG] run_vormonat_model finished successfully.")
 
     except ValueError as ve:
         # Falls falsches Kürzel / keine Daten
         st.error(str(ve))
+        # --- NEUE DEBUG-AUSGABE IM TERMINAL ---
+        print(f"[DEBUG] Caught ValueError: {ve}")
+        print("[DEBUG] Aborting with return.")
         return
     except Exception as e:
         # Allgemeiner Fehler
         st.error(f"Fehler bei der Berechnung: {e}")
+        # --- NEUE DEBUG-AUSGABE IM TERMINAL ---
+        print(f"[DEBUG] Caught general Exception: {e}")
+        print("[DEBUG] Aborting with return.")
         return
 
     # 5) Basisdaten für die Anzeige (z.B. aus 360°-Ergebnis)
@@ -95,13 +120,10 @@ def main():
     }
 
     # 6) In-Range & Expansionswerte
-    #  - 360°
     inrange_360 = result_360.get("in_range_vals", [])
     expansions_360 = result_360.get("expansions_vals", [])
-    #  - Vorjahr
     inrange_vorjahr = result_vorjahr.get("preise_inrange_vorjahr", [])
     expansions_vorjahr = result_vorjahr.get("preise_ausserhalb_vorjahr", [])
-    #  - Vormonat
     inrange_vormonat = result_vormonat.get("preise_inrange_vormonat", [])
     expansions_vormonat = result_vormonat.get("preise_ausserhalb_vormonat", [])
 
@@ -145,14 +167,17 @@ def main():
         ergebnisse["vm_range"] = ergebnisse["vm_high"] - ergebnisse["vm_low"]
 
     # 10) Abschließende Darstellung
+    # --- NEUE DEBUG-AUSGABE IM TERMINAL ---
+    print("[DEBUG] Displaying final results via display_results()")
     display_results(
-        ticker, 
-        basisdaten, 
-        ergebnisse, 
-        volatility, 
-        big_rhythm, 
+        ticker,
+        basisdaten,
+        ergebnisse,
+        volatility,
+        big_rhythm,
         small_div
     )
+    print("[DEBUG] main() finished successfully.\n")
 
 
 if __name__ == '__main__':
