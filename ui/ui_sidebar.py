@@ -23,6 +23,13 @@ def get_sidebar_inputs():
         options=["hoch", "tief"],
         index=0,
         help="Art der gesuchten Preisprojektion."
+
+    )
+    volatility = st.sidebar.radio(
+        label="Volatilität",
+        options=["normal", "hoch"],
+        index=0,
+        help="ATR-Faktor: normal=1.0, hoch=1.5"
     )
 
     atr_period = st.sidebar.number_input(
