@@ -1,3 +1,5 @@
+# ui_sidebar.py
+
 import streamlit as st
 from datetime import date
 
@@ -45,6 +47,7 @@ def get_sidebar_inputs():
         index=1,
         help="Teiler für das Vorjahr (8 oder 16)."
     )
+
     vm_divider = st.sidebar.radio(
         label="Teiler Vormonat",
         options=[8, 16],
@@ -78,6 +81,7 @@ def get_sidebar_inputs():
         "ticker": ticker,
         "analysis_date": analysis_date,
         "mode_choice": mode_choice,
+        "volatility": volatility,
         "atr_period": atr_period,
         "vj_divider": vj_divider,
         "vm_divider": vm_divider,
