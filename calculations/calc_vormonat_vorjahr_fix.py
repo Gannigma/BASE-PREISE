@@ -1,3 +1,5 @@
+# calculations/calc_vormonat_vorjahr_fix.py
+
 import yfinance as yf
 import math
 from datetime import date, timedelta
@@ -22,6 +24,10 @@ def find_extreme_3days(df, mode):
     else:
         idx = cands['Low'].idxmin()
     row = cands.loc[idx]
+
+    # Falls row unerwartet mehrere Zeilen enthält:
+    if isinstance(row, pd.DataFrame):
+        row = row.iloc[0]
     return idx, row
 
 def plot_chart(df_plot, highlights, lb, ub):
@@ -44,7 +50,18 @@ def plot_chart(df_plot, highlights, lb, ub):
 def load_data_year(ticker, year):
     start_date = f"{year}-01-01"
     end_date   = f"{year}-12-31"
-    df = yf.download(ticker, start=start_date, end=end_date, interval='1d', progress=False)
+    df = yf.download(
+        ticker, 
+        start=start_date, 
+        end=end_date, 
+        interval='1d', 
+        progress=False, 
+        auto_adjust=False
+    )
+    # ▼▼▼ MultiIndex ggf. entfernen ▼▼▼
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = df.columns.droplevel(1)
+
     if df.empty:
         raise ValueError(f"Keine Daten für das Vorjahr {year}. [{ticker}]")
     df.reset_index(inplace=True)
@@ -70,7 +87,18 @@ def run_vorjahr_model(ticker, analysis_date, mode_choice, divider_val,
     total_days = databuf + atr_period + 3
     end_date = analysis_date
     start_date = end_date - timedelta(days=total_days)
-    df_current = yf.download(ticker, start=start_date, end=end_date, interval='1d', progress=False)
+    df_current = yf.download(
+        ticker, 
+        start=start_date, 
+        end=end_date, 
+        interval='1d', 
+        progress=False, 
+        auto_adjust=False
+    )
+    # ▼▼▼ MultiIndex ggf. entfernen ▼▼▼
+    if isinstance(df_current.columns, pd.MultiIndex):
+        df_current.columns = df_current.columns.droplevel(1)
+
     if df_current.empty:
         raise ValueError("Keine aktuellen Daten (Vorjahr-Modell).")
 
@@ -141,7 +169,18 @@ def run_vorjahr_model(ticker, analysis_date, mode_choice, divider_val,
     return results
 
 def load_data_range(ticker, start_date, end_date):
-    df = yf.download(ticker, start=start_date, end=end_date, interval='1d', progress=False)
+    df = yf.download(
+        ticker, 
+        start=start_date, 
+        end=end_date, 
+        interval='1d', 
+        progress=False, 
+        auto_adjust=False
+    )
+    # ▼▼▼ MultiIndex ggf. entfernen ▼▼▼
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = df.columns.droplevel(1)
+
     if df.empty:
         raise ValueError("Falsches Wertpapierkürzel oder keine Daten (Vormonat).")
     df.reset_index(inplace=True)
