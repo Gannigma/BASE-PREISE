@@ -23,8 +23,8 @@ def get_sidebar_inputs():
         options=["hoch", "tief"],
         index=0,
         help="Art der gesuchten Preisprojektion."
-
     )
+
     volatility = st.sidebar.radio(
         label="Volatilität",
         options=["normal", "hoch"],
