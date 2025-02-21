@@ -1,14 +1,12 @@
+# ui_display.py
+
 import streamlit as st
 import plotly.graph_objects as go
 import pandas as pd
 
 def format_price(value: float) -> str:
     """
-    Formatiert Zahlen nach folgenden Regeln (deutsche Schreibweise):
-      - < 5 => 4 Nachkommastellen
-      - < 100 => 2 Nachkommastellen
-      - >= 100 => 0 Nachkommastellen
-    Außerdem Dezimalkomma ',' und Tausenderpunkt '.'
+    Formatiert Zahlen nach deutschen Regeln
     """
     if value is None:
         return "n/a"
@@ -55,7 +53,7 @@ def display_results(ticker, basisdaten, ergebnisse, volatility, big_rhythm, smal
     # BLOCK 2: IN-RANGE-WERTE
     # --------------------------------------------------
     st.subheader("Block 2: In-Range-Werte")
-    st.write("Hier hören wir die Preise innerhalb der ATR-Reihe in 3 Spalten : 360°, Vormonat, Vorjahr")
+    st.write("Hier sehen wir die Preise innerhalb der ATR-Reihe in 3 Spalten : 360°, Vormonat, Vorjahr")
 
     inrange_360 = ergebnisse.get("preise_inrange_360", [])
     inrange_vormonat = ergebnisse.get("preise_inrange_vormonat", [])
@@ -106,7 +104,6 @@ def display_results(ticker, basisdaten, ergebnisse, volatility, big_rhythm, smal
             fig.add_hline(y=ub_val, line=dict(color="black", dash="dash"),
                           annotation_text="Range-Obergrenze")
 
-        # 360°-Linien
         inrange_360 = ergebnisse.get("preise_inrange_360", [])
         inrange_vorjahr = ergebnisse.get("preise_inrange_vorjahr", [])
         inrange_vormonat = ergebnisse.get("preise_inrange_vormonat", [])
